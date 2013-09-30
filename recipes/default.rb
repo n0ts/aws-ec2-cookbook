@@ -11,6 +11,8 @@
 # Amazon Web Services
 # http://rubygems.org/gems/aws-sdk
 #
+include_recipe "xml::default"
+
 chef_gem "aws-sdk" do
   action :install
 end
