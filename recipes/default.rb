@@ -11,7 +11,12 @@
 # Amazon Web Services
 # http://rubygems.org/gems/aws-sdk
 #
-include_recipe "xml::default"
+include_recipe "xml"
+include_recipe "build-essential"
+
+pakage "libcurl4-gnutls-dev" do
+  action :install
+end
 
 chef_gem "aws-sdk" do
   action :install
