@@ -15,7 +15,7 @@
   r = package pkg do
     action :nothing
   end
-  r.run_actin(:install)
+  r.run_action(:install)
 end
 
 chef_gem "aws-sdk" do
