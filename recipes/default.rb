@@ -11,13 +11,11 @@
 # Amazon Web Services
 # http://rubygems.org/gems/aws-sdk
 #
-include_recipe "xml"
-include_recipe "build-essential"
-
-%w{ libcurl4-gnutls-dev make }.each do |pkg|
-  package pkg do
-    action :install
+%w{ libxml2-dev libxslt1-dev libcurl4-gnutls-dev make }.each do |pkg|
+  r = package pkg do
+    action :nothing
   end
+  r.run_actin(:install)
 end
 
 chef_gem "aws-sdk" do
