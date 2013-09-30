@@ -14,8 +14,10 @@
 include_recipe "xml"
 include_recipe "build-essential"
 
-package "libcurl4-gnutls-dev" do
-  action :install
+%w{ libcurl4-gnutls-dev make }.each do |pkg|
+  package pkg do
+    action :install
+  end
 end
 
 chef_gem "aws-sdk" do
