@@ -14,7 +14,7 @@
 include_recipe "xml"
 include_recipe "build-essential"
 
-pakage "libcurl4-gnutls-dev" do
+package "libcurl4-gnutls-dev" do
   action :install
 end
 
