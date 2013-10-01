@@ -11,11 +11,14 @@
 # Amazon Web Services
 # http://rubygems.org/gems/aws-sdk
 #
-%w{ libxml2-dev libxslt1-dev libcurl4-gnutls-dev make }.each do |pkg|
-  r = package pkg do
-    action :nothing
+case node[:platform]
+when 'ubuntu'
+  %w{ libxml2-dev libxslt1-dev libcurl4-gnutls-dev make }.each do |pkg|
+    r = package pkg do
+      action :nothing
+    end
+    r.run_action(:install)
   end
-  r.run_action(:install)
 end
 
 chef_gem "aws-sdk" do
@@ -92,7 +95,7 @@ template "/usr/local/bin/ec2_set_hostname.sh" do
   group "root"
   mode 0755
   action :create
-  notifies :run, "execute[exec-ec2_set_hostname]"
+  notifies :run, "execute[exec-ec2_set_hostname]", :immediately
 end
 
 execute "exec-ec2_set_hostname" do
@@ -102,7 +105,7 @@ end
 
 
 #
-# Override node ostname and fqdn
+# Override node hostname and fqdn
 #
 node.override[:hostname] = `hostname`
 node.override[:fqdn] = `hostname -a`

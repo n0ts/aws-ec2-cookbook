@@ -30,25 +30,56 @@ function get_metadata {
 #
 # Function for Route 53
 #
-function get_route53_hosted_zone_id {
+function route53_list_hosted_zones_get_id {
   DOMAIN=$1
   if [ -z "$DOMAIN" ]; then
     return
   fi
 
-  aws route53 list-hosted-zones --output text | grep $DOMAIN | cut -f3 | cut -d"/" -f3
+  # example text output
+  #
+  # False   100
+  # 15      <Unique Key>    /hostedzone/<Hosted Zone ID>      <Domain Name>.
+  # CONFIG
+  #
+  aws route53 list-hosted-zones --output text \
+      | grep "$DOMAIN" | cut -f3 | cut -d"/" -f3
 }
 
-function get_route53_record_set {
+function route53_list_resource_record_sets_search_domain {
   HOSTED_ZONE_ID=$1
   if [ -z "$HOSTED_ZONE_ID" ]; then
     return
   fi
 
-  aws route53 list-resource-record-sets --hosted-zone-id $HOSTED_ZONE_ID --output text 
+  NAME=$2
+  if [ -z "$NAME" ]; then
+    return
+  fi
+
+  TYPE=$3
+  if [ -z "$TYPE" ]; then
+    return
+  fi
+
+  VALUE=$4
+  if [ -z "$VALUE" ]; then
+    return
+  fi
+
+  # example text output
+  #
+  # False   100
+  # NS      <Domain Name>. 172800
+  # SOA ...
+  # CNAME ...
+  # A ...
+  #
+  aws route53 list-resource-record-sets --hosted-zone-id "$HOSTED_ZONE_ID" --output text \
+      | grep "$NAME" | grep "$TYPE" | grep "$VALUE"
 }
 
-function change_route53_record_set {
+function route53_change_resource_record_sets_get_id {
   HOSTED_ZONE_ID=$1
   if [ -z "$HOSTED_ZONE_ID" ]; then
     return
@@ -94,6 +125,86 @@ function change_route53_record_set {
 }
 EOF`
 
+  # example text output
+  #
+  # CHANGEINFO [PENDING|SYNC] <Date> /change/<Change Id>
+  #
   aws route53 change-resource-record-sets \
-                --hosted-zone-id "$HOSTED_ZONE_ID" --change-batch "$BATCH_JSON"
+      --hosted-zone-id "$HOSTED_ZONE_ID" --change-batch "$BATCH_JSON" --output text \
+      | cut -f4 | cut -d"/" -f3
+}
+
+function route53_get_change_get_status {
+  CHANGE_ID=$1
+  if [ -z "$CHANGE_ID" ]; then
+    return
+  fi
+
+  # example text output
+  #
+  # CHANGEINFO [PENDING|SYNC] <Date> /change/<Change Id>
+  #
+  aws route53 get-change --id "$CHANGE_ID" --output text \
+      | cut -f2 | tr -d "\n"
+}
+
+function route53_change_resource_record_reset {
+  HOSTED_ZONE_ID=$1
+  if [ -z "$HOSTED_ZONE_ID" ]; then
+    return
+  fi
+
+  NAME=$2
+  if [ -z "$NAME" ]; then
+    return
+  fi
+
+  TYPE=$3
+  if [ -z "$TYPE" ]; then
+    return
+  fi
+
+  VALUE=$4
+  if [ -z "$VALUE" ]; then
+    return
+  fi
+
+  SEARCH_DOMAIN_RESULT=`route53_list_resource_record_sets_search_domain \
+      "$HOSTED_ZONE_ID" "$NAME" "$TYPE" "$VALUE"`
+  if [ -n "$SEARCH_DOMAIN_RESULT" ]; then
+    DELETE_CHANGE_ID=`route53_change_resource_record_sets_get_id \
+        "$HOSTED_ZONE_ID" "DELETE" "$NAME" "$TYPE" "$VALUE"`
+
+    if [ -n "$DELETE_CHANGE_ID" ]; then
+      while [ true ]; do
+        DELETE_CHANGE_STATUS=`route53_get_change_get_status "$DELETE_CHANGE_ID"`
+        if [ "$DELETE_CHANGE_STATUS" = "PENDING" ]; then
+          echo "Waiting for delete record... $NAME"
+          sleep 3
+        elif [ "$DELETE_CHANGE_STATUS" = "INSYNC" ]; then
+          break
+        else
+          echo "Unknown error - $DELETE_CHANGE_STATUS"
+          exit 1
+        fi
+      done
+    fi
+  fi
+
+  CREATE_CHANGE_ID=`route53_change_resource_record_sets_get_id \
+        "$HOSTED_ZONE_ID" "CREATE" "$NAME" "$TYPE" "$VALUE"`
+  if [ -n "CREATE_CHANGE_ID" ]; then
+    while [ true ]; do
+      CREATE_CHANGE_STATUS=`route53_get_change_get_status "$CREATE_CHANGE_ID"`
+      if [ "$CREATE_CHANGE_STATUS" = "PENDING" ]; then
+        echo "Waiting for create record... $NAME"
+        sleep 3
+      elif [ "$CREATE_CHANGE_STATUS" = "INSYNC" ]; then
+        break
+      else
+        echo "Unknown error - $CREATE_CHANGE_STATUS"
+        exit 1
+      fi
+    done
+  fi
 }
