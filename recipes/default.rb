@@ -13,6 +13,15 @@
 #
 case node[:platform]
 when 'ubuntu'
+  execute "apt-get update" do
+    ignore_failure true
+    action :nothing
+    only_if do
+      ::File.exists?('/var/lib/apt/periodic/update-success-stamp') &&
+      ::File.mtime('/var/lib/apt/periodic/update-success-stamp') < Time.now - 86400
+    end
+  end.run_action(:run)
+
   %w{ libxml2-dev libxslt1-dev libcurl4-gnutls-dev make }.each do |pkg|
     r = package pkg do
       action :nothing
@@ -107,5 +116,13 @@ end
 #
 # Override node hostname and fqdn
 #
-node.override[:hostname] = `hostname`
-node.override[:fqdn] = `hostname -a`
+begin
+  AWS.ec2.instances.each do |instance|
+    next if instance.status != :running or !instance.tags.empty?
+    if node[:ipaddress] == instance.private_ip_address
+      node.override[:hostname] = instance.tags[:Name]
+      node.override[:fqdn] = "#{instance.tags[:Name]}.#{instance.tags[:Domain]}"
+      break
+    end
+  end
+end
