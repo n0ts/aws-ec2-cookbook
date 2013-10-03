@@ -131,7 +131,7 @@ EOF`
   #
   aws route53 change-resource-record-sets \
       --hosted-zone-id "$HOSTED_ZONE_ID" --change-batch "$BATCH_JSON" --output text \
-      | cut -f4 | cut -d"/" -f3
+      | cut -f4 | cut -d"/" -f3  | tr -d "\n"
 }
 
 function route53_get_change_get_status {
@@ -193,7 +193,7 @@ function route53_change_resource_record_reset {
 
   CREATE_CHANGE_ID=`route53_change_resource_record_sets_get_id \
         "$HOSTED_ZONE_ID" "CREATE" "$NAME" "$TYPE" "$VALUE"`
-  if [ -n "CREATE_CHANGE_ID" ]; then
+  if [ -n "$CREATE_CHANGE_ID" ]; then
     while [ true ]; do
       CREATE_CHANGE_STATUS=`route53_get_change_get_status "$CREATE_CHANGE_ID"`
       if [ "$CREATE_CHANGE_STATUS" = "PENDING" ]; then
