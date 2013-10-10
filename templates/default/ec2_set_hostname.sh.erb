@@ -8,6 +8,7 @@ if [ ! -f "$EC2_DATAFILE" ]; then
     source "/usr/local/bin/ec2_get_data.sh"
 fi
 
+HOSTNAME=`hostname`
 DOMAINNAME=
 TAG_DOMAINNAME=`cat $EC2_DATAFILE | grep TAG | grep Domain | cut -f5`
 if [ -n "$TAG_DOMAINNAME" ]; then
@@ -19,7 +20,7 @@ LOCAL_IPV4=`get_metadata "local-ipv4"`
 LOCAL_HOSTNAME=`get_metadata "local-hostname" | cut -d"." -f1`
 if [ -n "$LOCAL_IPV4" ]; then
   if [ -n "$DOMAINNAME" ]; then
-    HOSTS_LOCAL="$LOCAL_IPV4 $LOCAL_HOSTNAME $LOCAL_HOSTNAME.$DOMAINNAME"
+    HOSTS_LOCAL="$LOCAL_IPV4 $LOCAL_HOSTNAME.$DOMAINNAME $LOCAL_HOSTNAME"
   else
     HOSTS_LOCAL="$LOCAL_IPV4 $LOCAL_HOSTNAME"
   fi
@@ -29,7 +30,7 @@ HOSTS_TAG=
 TAG_HOSTNAME=`cat $EC2_DATAFILE | grep TAG | grep Name | cut -f5`
 if [ -n "$HOSTNAME" ]; then
   if [ -n "$DOMAINNAME" ]; then
-    HOSTS_TAG="$LOCAL_IPV4 $TAG_HOSTNAME $TAG_HOSTNAME.$DOMAINNAME"
+    HOSTS_TAG="$LOCAL_IPV4 $TAG_HOSTNAME.$DOMAINNAME $TAG_HOSTNAME"
   else 
     HOSTS_TAG="$LOCAL_IPV4 $TAG_HOSTNAME"
   fi
@@ -38,14 +39,17 @@ fi
 
 # Set hostname
 if [ -n "$TAG_HOSTNAME" ]; then
-  hostname "$TAG_HOSTNAME"
-  echo $TAG_HOSTNAME > /etc/hostname
+  if [ "$HOSTNAME" != "$TAG_HOSTNAME" ]; then
+    hostname "$TAG_HOSTNAME"
+    echo $TAG_HOSTNAME > /etc/hostname
+  fi
 fi
 
 
 # Add fqdn to hosts file
 if [ -n "$TAG_HOSTNAME" ]; then
-  cat<<EOF > /etc/hosts
+  if [ "$HOSTNAME" != "$TAG_HOSTNAME" ]; then
+    cat<<EOF > /etc/hosts
 # This file is automatically genreated by ec2-hostname script
 127.0.0.1 localhost localhost.localdomain
 
@@ -60,6 +64,7 @@ ff02::1 ip6-allnodes
 ff02::2 ip6-allrouters
 ff02::3 ip6-allhosts
 EOF
+  fi
 fi
 
 
