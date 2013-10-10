@@ -6,6 +6,3 @@
 #
 # All rights reserved - Do Not Redistribute
 #
-
-default.aws_ec2 = {
-}
