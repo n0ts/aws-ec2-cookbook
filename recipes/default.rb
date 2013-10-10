@@ -66,7 +66,7 @@ python_pip "awscli"
 
 common_profile "awscli" do
   content <<-EOH
-if [ -x "`which aws 2> /dev/null`" ]; then
+if [ -x "`which aws`" ]; then
   AZ=`curl --connect-timeout 3 -s http://169.254.169.254/latest/meta-data/placement/availability-zone`
   if [ -n "$AZ" ]; then
     export AWS_DEFAULT_REGION=`echo $AZ | cut -c 1-$((${#AZ} - 1))`
@@ -110,19 +110,4 @@ end
 execute "exec-ec2_set_hostname" do
   command "/usr/local/bin/ec2_set_hostname.sh"
   action :nothing
-end
-
-
-#
-# Override node hostname and fqdn
-#
-begin
-  AWS.ec2.instances.each do |instance|
-    next if instance.status != :running or !instance.tags.empty?
-    if node[:ipaddress] == instance.private_ip_address
-      node.override[:hostname] = instance.tags[:Name]
-      node.override[:fqdn] = "#{instance.tags[:Name]}.#{instance.tags[:Domain]}"
-      break
-    end
-  end
 end
