@@ -78,6 +78,16 @@ fi
 EOH
 end
 
+unless node['aws_ec2']['awscli_credentials_csv'].empty?
+  common_profile "_awscli" do
+    content <<-EOH
+export AWS_NAME="#{node['aws_ec2']['awscli_credentials_csv'].split(",")[0]}"
+export AWS_ACCESS_KEY_ID="#{node['aws_ec2']['awscli_credentials_csv'].split(",")[1]}"
+export AWS_SECRET_ACCESS_KEY="#{node['aws_ec2']['awscli_credentials_csv'].split(",")[2]}"
+EOH
+  end
+end
+
 
 #
 # Set hostname script

@@ -1,0 +1,7 @@
+#
+#
+# ext4 /dev/xvdf
+
+mkfs -t <%= @params[:filesystem] %> <%= @params[:device] %> /dev/xvdf
+echo -e "/dev/xvdf\t/data\text4\tdefaults,noatime\t0\t0" >> /etc/fstab
+mount -a
