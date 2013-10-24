@@ -62,7 +62,9 @@ when 'ubuntu'
 end
 
 include_recipe "python"
-python_pip "awscli"
+python_pip "awscli" do
+  version "1.1.2"
+end
 
 common_profile "awscli" do
   content <<-EOH
