@@ -183,8 +183,10 @@ function route53_change_resource_record_reset {
           sleep 3
         elif [ "$DELETE_CHANGE_STATUS" = "INSYNC" ]; then
           break
+        elif [ "$DELETE_CHANGE_STATUS" = "" ]; then
+          break
         else
-          echo "Unknown error - $DELETE_CHANGE_STATUS"
+          echo "Unknown delete error - $DELETE_CHANGE_STATUS"
           exit 1
         fi
       done
@@ -201,8 +203,10 @@ function route53_change_resource_record_reset {
         sleep 3
       elif [ "$CREATE_CHANGE_STATUS" = "INSYNC" ]; then
         break
+      elif [ "$CREATE_CHANGE_STATUS" = "" ]; then
+        break
       else
-        echo "Unknown error - $CREATE_CHANGE_STATUS"
+        echo "Unknown create error - $CREATE_CHANGE_STATUS"
         exit 1
       fi
     done
