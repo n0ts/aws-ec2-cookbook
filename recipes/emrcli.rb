@@ -10,8 +10,13 @@
 emr_cli_home = "/usr/local/etc/elastic-mapreduce-cli"
 
 # emrcli require for ruby 1.8.7
-%w{ ruby-full unzip }.each do |pkg|
- package pkg
+case node['platform_family']
+when 'rhel'
+  # FIXME
+when 'debian'
+  %w{ ruby-full unzip }.each do |pkg|
+    package pkg
+  end
 end
 
 remote_file "/usr/local/etc/elastic-mapreduce-ruby.zip" do
