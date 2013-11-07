@@ -35,7 +35,7 @@ end
 bash "install-emr-cli" do
   code <<-EOH
   unzip /usr/local/etc/elastic-mapreduce-ruby.zip -d #{emr_cli_home}
-  chown -R node[:aws_ec2][:emrcli][:group] #{emr_cli_home}
+  chown -R root:node[:aws_ec2][:emrcli][:group] #{emr_cli_home}
 EOH
   user "root" 
   action :run
