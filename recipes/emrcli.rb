@@ -9,6 +9,10 @@
 
 emr_cli_home = "/usr/local/etc/elastic-mapreduce-cli"
 
+group node[:aws_ec2][:emrcli][:group] do
+  action :create
+end
+
 # emrcli require for ruby 1.8.7
 case node['platform_family']
 when 'rhel'
@@ -42,10 +46,6 @@ common_profile "emr-cli" do
   content <<-EOH
 export PATH="#{emr_cli_home}:$PATH"
 EOH
-end
-
-group node[:aws_ec2][:emrcli][:group] do
-  action :create
 end
 
 secret = Chef::EncryptedDataBagItem.load_secret(node[:aws_ec2][:emrcli][:data_bag_load_secret_path])
