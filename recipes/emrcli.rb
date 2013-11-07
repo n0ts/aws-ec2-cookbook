@@ -22,7 +22,7 @@ end
 remote_file "/usr/local/etc/elastic-mapreduce-ruby.zip" do
   source "http://elasticmapreduce.s3.amazonaws.com/elastic-mapreduce-ruby.zip"
   owner "root"
-  group "root"
+  group node[:aws_ec2][:emrcli][:group]
   mode 0644
   action :create
 end
@@ -31,8 +31,9 @@ end
 bash "install-emr-cli" do
   code <<-EOH
   unzip /usr/local/etc/elastic-mapreduce-ruby.zip -d #{emr_cli_home}
+  chown -R node[:aws_ec2][:emrcli][:group] #{emr_cli_home}
 EOH
-  user "root"
+  user "root" 
   action :run
   not_if { ::FileTest.directory?(emr_cli_home) }
 end
@@ -43,11 +44,16 @@ export PATH="#{emr_cli_home}:$PATH"
 EOH
 end
 
+group node[:aws_ec2][:emrcli][:group] do
+  action :create
+end
 
 secret = Chef::EncryptedDataBagItem.load_secret(node[:aws_ec2][:emrcli][:data_bag_load_secret_path])
 data_bag = Chef::EncryptedDataBagItem.load(node[:aws_ec2][:emrcli][:data_bag_load_path],
                                            node[:aws_ec2][:emrcli][:data_bag_name],
                                            secret)
+# AWS EMR - Configuring Credentials
+# http://docs.aws.amazon.com/ElasticMapReduce/latest/DeveloperGuide/emr-cli-install.html#ConfigCredentials
 file "#{emr_cli_home}/credentials.json" do
   content <<-EOH
 {
@@ -59,8 +65,8 @@ file "#{emr_cli_home}/credentials.json" do
   "region": "#{node[:aws_ec2][:emrcli][:region]}"
 }
 EOH
-  user node[:aws_ec2][:emrcli][:user]
-  group node[:aws_ec2][:emrcli][:user]
-  mode 0600
+  user "root"
+  group node[:aws_ec2][:emrcli][:group]
+  mode 0640
   action :create
 end

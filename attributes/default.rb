@@ -20,5 +20,5 @@ default[:aws_ec2][:emrcli] = {
   :key_pair_file => "",
   :log_uri => "",
   :regiion => "",
-  :user => "root",
+  :group => "emrcli",
 }
